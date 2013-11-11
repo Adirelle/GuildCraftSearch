@@ -25,6 +25,14 @@ local frame = CreateFrame("Frame", addonName, UIParent)
 frame:Hide()
 frame:SetScript('OnEvent', function(self, event, ...) return self[event](self, event, ...) end)
 
+local filterToSet
+local function UpdateTradeSkillFrameSearchBox()
+	if filterToSet and TradeSkillFrameSearchBox and TradeSkillFrameSearchBox:IsVisible() and TradeSkillFrameSearchBox:GetText() ~= filterToSet then
+		TradeSkillFrameSearchBox:SetText(filterToSet)
+		filterToSet = nil
+	end
+end
+
 frame:SetScript('OnShow', function(self)
 
 	local waitRecipes = false
@@ -81,15 +89,6 @@ frame:SetScript('OnShow', function(self)
 		end
 		self:HighlightText()
 	end)
-	editBox:SetScript('OnTextChanged', function(self, userInput)
-		local text = self:GetText()
-		if text == SEARCH then
-			text = ""
-		end
-		if GetTradeSkillItemNameFilter() ~= text then
-			SetTradeSkillItemNameFilter(text)
-		end
-	end)
 
 	local leftTexture = editBox:CreateTexture("BACKGROUND")
 	leftTexture:SetSize(8, 20)
@@ -111,10 +110,19 @@ frame:SetScript('OnShow', function(self)
 	middleTexture:SetTexCoord(0.0625, 0.9375, 0, 0.625)
 
 	local function Button_OnClick(button)
+		local text = editBox:GetText()
+		if text == SEARCH then
+			filterToSet = ""
+		else
+			filterToSet = text
+		end
+
 		if not TradeSkillFrame_Show then
 			TradeSkillFrame_LoadUI()
 		end
 		ViewGuildRecipes(button.skillID)
+
+		UpdateTradeSkillFrameSearchBox()
 	end
 
 	local function Button_OnEnter(button)
@@ -289,6 +297,7 @@ function frame:ADDON_LOADED(_, name)
 				return TradeSkillFrame_Update()
 			end
 		end)
+		TradeSkillFrameSearchBox:HookScript('OnShow', UpdateTradeSkillFrameSearchBox)
 	else
 		return
 	end
