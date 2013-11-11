@@ -27,10 +27,10 @@ frame:SetScript('OnEvent', function(self, event, ...) return self[event](self, e
 
 frame:SetScript('OnShow', function(self)
 
-	self:SetSize(212, 200)
 	local waitRecipes = false
 	local buttons = {}
 
+	self:SetSize(212, 80)
 	self:SetPoint("CENTER")
 	self:SetBackdrop({
 		bgFile = "Interface/Tooltips/UI-Tooltip-Background",
@@ -185,6 +185,7 @@ frame:SetScript('OnShow', function(self)
 		for i = numButtons+1, #buttons do
 			buttons[i]:Hide()
 		end
+		self:SetHeight(80 + 36 * ceil((numButtons-1) / 5))
 	end
 
 	tinsert(UISpecialFrames, self:GetName())
