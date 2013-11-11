@@ -28,6 +28,9 @@ frame:SetScript('OnEvent', function(self, event, ...) return self[event](self, e
 frame:SetScript('OnShow', function(self)
 
 	self:SetSize(212, 200)
+	local waitRecipes = false
+	local buttons = {}
+
 	self:SetPoint("CENTER")
 	self:SetBackdrop({
 		bgFile = "Interface/Tooltips/UI-Tooltip-Background",
@@ -108,8 +111,10 @@ frame:SetScript('OnShow', function(self)
 	middleTexture:SetTexCoord(0.0625, 0.9375, 0, 0.625)
 
 	local function Button_OnClick(button)
-
-		print('Button_OnClick', button, button.skillID)
+		if not TradeSkillFrame_Show then
+			TradeSkillFrame_LoadUI()
+		end
+		ViewGuildRecipes(button.skillID)
 	end
 
 	local function Button_OnEnter(button)
@@ -128,19 +133,12 @@ frame:SetScript('OnShow', function(self)
 		end
 	end
 
-	local buttons = {}
-
-	local OnShow = function()
-		editBox:SetFocus()
-		local text = GetTradeSkillItemNameFilter()
-		if text and text ~= "" then
-			editBox:SetText(text)
-		end
-
+	function self:GUILD_TRADESKILL_UPDATE()
+		waitRecipes = false
 		local numButtons = 0
 		for i = 1, GetNumGuildTradeSkill() do
 			local skillID, _, iconTexture, headerName, numOnline, _, numPlayers = GetGuildTradeSkillInfo(i)
-			if skillID and iconTexture and headerName then
+			if skillID and CanViewGuildRecipes(skillID) and iconTexture and headerName then
 				numButtons = numButtons + 1
 				local button = buttons[numButtons]
 				if not button then
@@ -188,10 +186,26 @@ frame:SetScript('OnShow', function(self)
 			buttons[i]:Hide()
 		end
 	end
-	self:SetScript('OnShow', OnShow)
-	OnShow()
 
 	tinsert(UISpecialFrames, self:GetName())
+
+	function self:OnShow()
+		editBox:SetFocus()
+		local text = GetTradeSkillItemNameFilter()
+		if text and text ~= "" then
+			editBox:SetText(text)
+		end
+		if not waitRecipes then
+			waitRecipes = true
+			QueryGuildRecipes()
+		end
+		self:RegisterEvent('GUILD_TRADESKILL_UPDATE')
+	end
+	self:SetScript('OnShow', self.OnShow)
+	self:SetScript('OnHide', self.UnregisterAllEvents)
+
+
+	return self:OnShow(self)
 end)
 
 local function OpenGUI()
