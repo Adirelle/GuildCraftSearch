@@ -1,0 +1,16 @@
+## Interface: 50400
+
+## Title: GuildCraftSearch
+## Notes: A simple GUI to quickly search through the recipes known by your guildmates.
+## Author: Adirelle
+## SavedVariables: GuildCraftSearchDB
+## Version: @project-version@
+## X-Date: @project-date-iso@
+## X-License: GPL v3
+## X-eMail: adirelle@gmail.com
+
+libs\LibStub.lua
+libs\LibDataBroker-1.1.lua
+libs\LibDBIcon-1.0.lua
+
+GuildCraftSearch.lua
