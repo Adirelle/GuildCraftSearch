@@ -205,36 +205,97 @@ frame:SetScript('OnShow', function(self)
 	self:SetScript('OnShow', self.OnShow)
 	self:SetScript('OnHide', self.UnregisterAllEvents)
 
+	self:EnableMouse(true)
+	self:SetClampedToScreen(true)
+
+	self:SetScript('OnMouseDown', function()
+		if self:IsMovable() then
+			self:StartMoving()
+		end
+	end)
+	self:SetScript('OnMouseUp', function()
+		if self:IsMovable() then
+			self:StopMovingOrSizing()
+			local point, relativeTo, relativePoint, xOfs, yOfs = self:GetPoint()
+			GuildCraftSearchDB.anchor = { point, relativeTo and relativeTo:GetName(), relativePoint, xOfs, yOfs }
+		end
+	end)
 
 	return self:OnShow(self)
 end)
 
-local function OpenGUI()
+local function OpenGUI(anchor)
+	frame.anchored = not not anchor
+	frame:SetMovable(not frame.anchored)
 	frame:Show()
+	frame:ClearAllPoints()
+	if anchor then
+		local scale, x, y = UIParent:GetEffectiveScale(), anchor:GetCenter()
+		x, y  = x / scale, y / scale
+		local uiscale, sw, sh = UIParent:GetEffectiveScale(), UIParent:GetSize()
+		sw, sh = sw / uiscale, sh / uiscale
+		local fromH, toH = "", ""
+		local fromV, toV = "", ""
+		if y < sw * 3 / 5 then
+			fromV, toV = "TOP", (y < sh - 24) and "TOP" or "BOTTOM"
+		else
+			fromV, toV = "BOTTOM", "TOP"
+		end
+		if x < sw / 3 then
+			fromH, toH = "LEFT", "RIGHT"
+		elseif x > sw * 2 / 3 then
+			fromH, toH = "RIGHT", "LEFT"
+		else
+			fromH, toH = "", ""
+		end
+		frame:SetPoint(fromV..fromH, anchor, toV..toH)
+	else
+		if GuildCraftSearchDB.anchor then
+			frame:SetPoint(unpack(GuildCraftSearchDB.anchor))
+		else
+			frame:SetPoint("CENTER", UIParent, 0, 0)
+		end
+	end
 end
 
 SLASH_GUILDCRAFTSEARCH2 = "/guildcraftsearch"
 SLASH_GUILDCRAFTSEARCH1 = "/gcs"
 function SlashCmdList.GUILDCRAFTSEARCH(txt)
-	OpenGUI()
+	OpenGUI(nil)
 	if txt and txt ~= "" then
+		frame.EditBox:SetText(txt)
 	end
 end
 
+local n = 2
 function frame:ADDON_LOADED(_, name)
-	if name ~= addonName then return end
-	frame:UnregisterEvent('ADDON_LOADED')
+	if name == addonName then
 
-	if not GuildCraftSearchDB then GuildCraftSearchDB = {} end
+		if not GuildCraftSearchDB then GuildCraftSearchDB = {} end
 
-	local dataobj = LibStub('LibDataBroker-1.1'):NewDataObject(addonName, {
-		type = 'launcher',
-		label = "Guild crafts",
-		OnClick = function(anchor)
-			OpenGUI()
-		end,
-	})
+		local dataobj = LibStub('LibDataBroker-1.1'):NewDataObject(addonName, {
+			type = 'launcher',
+			label = "Guild crafts",
+			icon = [[Interface\ICONS\INV_Misc_Spyglass_03]],
+			OnClick = OpenGUI,
+		})
 
-	--LibStub('LibDBIcon-1.0'):Register(addonName, dataobj, GuildCraftSearchDB)
+		LibStub('LibDBIcon-1.0'):Register(addonName, dataobj, GuildCraftSearchDB)
+
+	elseif name == 'Blizzard_TradeSkillUI' then
+		-- Same blizzard fix
+		hooksecurefunc('TradeSkillFrame_OnEvent', function(_, event)
+			if event == 'GUILD_TRADESKILL_UPDATE' and IsTradeSkillGuild() and TradeSkillFrame:IsShown() then
+				return TradeSkillFrame_Update()
+			end
+		end)
+	else
+		return
+	end
+	n = n - 1
+	if n == 0 then
+		self:UnregisterEvent('ADDON_LOADED')
+	end
 end
+
 frame:RegisterEvent('ADDON_LOADED')
