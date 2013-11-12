@@ -33,6 +33,14 @@ local function UpdateTradeSkillFrameSearchBox()
 	end
 end
 
+local function GuildTradeSkillFix()
+	if TradeSkillFrame and IsTradeSkillGuild() and TradeSkillFrame:IsShown() then
+		return TradeSkillFrame_Update()
+	end
+end
+frame.GUILD_TRADESKILL_UPDATE = GuildTradeSkillFix
+frame:RegisterEvent('GUILD_TRADESKILL_UPDATE')
+
 frame:SetScript('OnShow', function(self)
 
 	local waitRecipes = false
@@ -142,6 +150,9 @@ frame:SetScript('OnShow', function(self)
 	end
 
 	function self:GUILD_TRADESKILL_UPDATE()
+		GuildTradeSkillFix()
+		if not frame:IsVisible() then return end
+
 		waitRecipes = false
 		local numButtons = 0
 		for i = 1, GetNumGuildTradeSkill() do
@@ -208,10 +219,8 @@ frame:SetScript('OnShow', function(self)
 			waitRecipes = true
 			QueryGuildRecipes()
 		end
-		self:RegisterEvent('GUILD_TRADESKILL_UPDATE')
 	end
 	self:SetScript('OnShow', self.OnShow)
-	self:SetScript('OnHide', self.UnregisterAllEvents)
 
 	self:EnableMouse(true)
 	self:SetClampedToScreen(true)
@@ -275,36 +284,21 @@ function SlashCmdList.GUILDCRAFTSEARCH(txt)
 	end
 end
 
-local n = 2
 function frame:ADDON_LOADED(_, name)
-	if name == addonName then
+	if name ~= addonName then return end
 
-		if not GuildCraftSearchDB then GuildCraftSearchDB = {} end
+	if not GuildCraftSearchDB then GuildCraftSearchDB = {} end
 
-		local dataobj = LibStub('LibDataBroker-1.1'):NewDataObject(addonName, {
-			type = 'launcher',
-			label = "Guild crafts",
-			icon = [[Interface\ICONS\INV_Misc_Spyglass_03]],
-			OnClick = OpenGUI,
-		})
+	local dataobj = LibStub('LibDataBroker-1.1'):NewDataObject(addonName, {
+		type = 'launcher',
+		label = "Guild crafts",
+		icon = [[Interface\ICONS\INV_Misc_Spyglass_03]],
+		OnClick = OpenGUI,
+	})
 
-		LibStub('LibDBIcon-1.0'):Register(addonName, dataobj, GuildCraftSearchDB)
+	LibStub('LibDBIcon-1.0'):Register(addonName, dataobj, GuildCraftSearchDB)
 
-	elseif name == 'Blizzard_TradeSkillUI' then
-		-- Same blizzard fix
-		hooksecurefunc('TradeSkillFrame_OnEvent', function(_, event)
-			if event == 'GUILD_TRADESKILL_UPDATE' and IsTradeSkillGuild() and TradeSkillFrame:IsShown() then
-				return TradeSkillFrame_Update()
-			end
-		end)
-		TradeSkillFrameSearchBox:HookScript('OnShow', UpdateTradeSkillFrameSearchBox)
-	else
-		return
-	end
-	n = n - 1
-	if n == 0 then
-		self:UnregisterEvent('ADDON_LOADED')
-	end
+	self:UnregisterEvent('ADDON_LOADED')
 end
 
 frame:RegisterEvent('ADDON_LOADED')
