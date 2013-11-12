@@ -98,6 +98,19 @@ frame:SetScript('OnShow', function(self)
 		self:HighlightText()
 	end)
 
+	local raw_ChatEdit_InsertLink = _G.ChatEdit_InsertLink
+	_G.ChatEdit_InsertLink = function(link)
+		if raw_ChatEdit_InsertLink(link) then return true end
+		if link and link ~= "" and editBox:IsVisible() and editBox:HasFocus() then
+			local text = strmatch(link, '|h%[(.+)%]|h')
+			if text then
+				editBox:SetText(text)
+				return true
+			end
+		end
+		return false
+	end
+
 	local leftTexture = editBox:CreateTexture("BACKGROUND")
 	leftTexture:SetSize(8, 20)
 	leftTexture:SetPoint("TOPLEFT", -5, 0)
